@@ -1,7 +1,7 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
-const BASE_URL = "https://apkvault.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://apkvault.vercel.app";
 
 export default async function sitemap() {
   const routes = [
