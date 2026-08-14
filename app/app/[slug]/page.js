@@ -187,9 +187,13 @@ export default function AppDetailPage() {
         }
         // Already downloaded → skip counter, still deliver file
       } else {
-        // Anonymous user — fire-and-forget increment (no dedupe possible)
-        await updateDoc(appRef, { downloads: increment(1) });
-        setApp((prev) => ({ ...prev, downloads: (prev.downloads || 0) + 1 }));
+        // Anonymous user — localStorage based dedupe (best effort)
+        const dlKey = `dl_${app.id}`;
+        if (!localStorage.getItem(dlKey)) {
+          await updateDoc(appRef, { downloads: increment(1) });
+          setApp((prev) => ({ ...prev, downloads: (prev.downloads || 0) + 1 }));
+          localStorage.setItem(dlKey, Date.now().toString());
+        }
       }
     } catch {
       // Non-critical — still allow download
