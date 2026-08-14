@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper functions ───────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      // Hardcoded admin UID allowlist — single admin for personal app store
+      // Replace with your actual Firebase Auth UID
+      return isSignedIn() && request.auth.uid == 'dQIBP0mKjOOdA6Mtyj59tzyrVo02';
+    }
+
+    // ─── apps collection ────────────────────────────────────────
+    match /apps/{appId} {
+      // Public: anyone can read ONLY published apps
+      allow read: if resource.data.published == true;
+
+      // Admin: can read ALL apps (including drafts)
+      allow read: if isAdmin();
+
+      // Admin: full write access with field validation
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasAll([
+          'name', 'slug', 'packageName', 'versionCode', 'versionName',
+          'category', 'sizeMb', 'description', 'iconUrl', 'apkUrl',
+          'downloads', 'featured', 'published', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.slug is string
+        && request.resource.data.downloads == 0;
+
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+
+      // Special rule: allow authenticated users to increment downloads only
+      // They can ONLY update the 'downloads' field, nothing else
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloads'])
+        && request.resource.data.downloads == resource.data.downloads + 1;
+    }
+
+    // ─── downloads collection (deduplication) ───────────────────
+    match /downloads/{downloadId} {
+      // Admin can read all download records
+      allow read: if isAdmin();
+
+      // Users can read their own download records
+      allow read: if isSignedIn()
+        && resource.data.uid == request.auth.uid;
+
+      // Users can create a download record for themselves only
+      // Document ID must be {appId}_{uid} format
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasAll(['appId', 'uid', 'downloadedAt'])
+        && request.resource.data.appId is string
+        && request.resource.data.uid is string;
+
+      // No updates or deletes — download records are immutable
+      allow update, delete: if false;
+    }
+
+    // ─── users collection ───────────────────────────────────────
+    match /users/{uid} {
+      // Users can read their own profile
+      allow read: if isSignedIn() && request.auth.uid == uid;
+
+      // Admin can read all user profiles
+      allow read: if isAdmin();
+
+      // Users can create their own profile on signup
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['email', 'role', 'createdAt'])
+        && request.resource.data.role == 'user';
+
+      // Users can update their own profile (but cannot change role)
+      allow update: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.role == 'user';
+
+      // Admin can update any user (including role changes)
+      allow update: if isAdmin();
+
+      // Only admin can delete users
+      allow delete: if isAdmin();
+    }
+
+    // ─── Deny everything else ───────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
