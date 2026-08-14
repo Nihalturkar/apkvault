@@ -7,6 +7,6 @@ export default function robots() {
         disallow: ["/dashboard-x7k9/", "/api/"],
       },
     ],
-    sitemap: `${process.env.NEXT_PUBLIC_SITE_URL || "https://apkvault.vercel.app"}/sitemap.xml`,
+    sitemap: `${process.env.NEXT_PUBLIC_SITE_URL || "https://apkvault-umber.vercel.app"}/sitemap.xml`,
   };
 }
