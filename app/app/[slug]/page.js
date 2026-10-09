@@ -201,8 +201,6 @@ export default function AppDetailPage() {
     // Trigger file download
     const a = document.createElement("a");
     a.href = app.apkUrl;
-    a.download = `${app.slug || app.name || "app"}.apk`;
-    a.setAttribute("type", "application/vnd.android.package-archive");
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

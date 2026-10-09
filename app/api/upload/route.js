@@ -38,10 +38,6 @@ export async function POST(request) {
     } else if (type === "screenshot") {
       folder = `apkvault/apps/${slug}/screenshots`;
       publicId = `ss_${Date.now()}`;
-    } else if (type === "apk") {
-      folder = `apkvault/apps/${slug}`;
-      publicId = `${slug}`;
-      resourceType = "raw"; // APK files are raw/binary
     } else {
       return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     }

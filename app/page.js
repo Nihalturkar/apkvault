@@ -116,7 +116,6 @@ async function trackAndDownload(app) {
   if (app.apkUrl) {
     const a = document.createElement("a");
     a.href = app.apkUrl;
-    a.download = "";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
